@@ -4,6 +4,7 @@ Encapsula os scripts 2_transform_compare.py e 2_validate.py
 """
 
 import os
+import warnings
 import pandas as pd
 import pyodbc
 import hashlib
@@ -197,7 +198,9 @@ class ExpensesTransformer:
         # Cria mapa SIT -> ID_TERMO
         try:
             query_mapa = "SELECT id_termo, nro_sit FROM termos"
-            df_mapa = pd.read_sql(query_mapa, conn)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy connectable", category=UserWarning)
+                df_mapa = pd.read_sql(query_mapa, conn)
             df_mapa["nro_sit"] = df_mapa["nro_sit"].apply(limpar_string_numero)
             df_mapa["id_termo"] = df_mapa["id_termo"].apply(limpar_string_numero)
             mapa_sit_para_id = df_mapa.set_index("nro_sit")["id_termo"].to_dict()
@@ -216,7 +219,9 @@ class ExpensesTransformer:
         
         try:
             query_termos = "SELECT nro_sit, rendimento_financeiro_total FROM termos"
-            df_termos_sql = pd.read_sql(query_termos, conn)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy connectable", category=UserWarning)
+                df_termos_sql = pd.read_sql(query_termos, conn)
             df_termos_sql["nro_sit"] = df_termos_sql["nro_sit"].apply(limpar_string_numero)
             
             merged_termos = df_termos_csv.merge(
@@ -268,7 +273,9 @@ class ExpensesTransformer:
                 
                 try:
                     query_rubs = "SELECT id_termo_rubrica, valor_estornado FROM rubricas"
-                    df_rubs_sql = pd.read_sql(query_rubs, conn)
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy connectable", category=UserWarning)
+                        df_rubs_sql = pd.read_sql(query_rubs, conn)
                     
                     merged_rubs = linhas_validas.merge(
                         df_rubs_sql,
