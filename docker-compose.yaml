@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # ===== SERVIÇO: SQL SERVER =====
+  # Banco de dados da aplicação
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: grants_sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-YourPassword123!@}"
+      MSSQL_PID: "Developer"                   # Edição Developer (grátis)
+      TZ: "America/Sao_Paulo"                  # Timezone
+    ports:
+      - "1433:1433"  # Porta padrão SQL Server (acesso local + container)
+    volumes:
+      # Persistência de dados mesmo se container for deletado
+      - sqlserver_data:/var/opt/mssql/data
+      - sqlserver_logs:/var/opt/mssql/log
+      - sqlserver_backup:/var/opt/mssql/backup
+      # Copia scripts SQL de inicialização
+      - ./database/ddl:/scripts/ddl:ro
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD:-YourPassword123!@}", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - grants_network
+    restart: unless-stopped
+
+  # ===== SERVIÇO: ETL PIPELINE =====
+  # Aplicação Python que processa os dados
+  etl_pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: grants_etl
+    depends_on:
+      sqlserver:
+        condition: service_healthy  # Espera SQL Server estar pronto
+    environment:
+      # Configurações de conexão
+      DIR_DOWNLOADS: /data/downloads
+      DIR_STAGING: /data/processed
+      DIR_LOGS: /app/logs
+      # SQL Server (usar nome do serviço, não localhost)
+      CONN_STR_SQLSERVER: "Driver={ODBC Driver 17 for SQL Server};Server=sqlserver,1433;Database=ETL_Convenios;UID=sa;PWD=${MSSQL_SA_PASSWORD:-YourPassword123!@};"
+      # Python
+      PYTHONUNBUFFERED: 1
+    volumes:
+      # Monta diretórios de dados (persistência)
+      - ./data/raw:/data/raw:rw
+      - ./data/processed:/data/processed:rw
+      - ./logs:/app/logs:rw
+      # Opcional: monta código para desenvolvimento (hot reload)
+      # - ./src:/app/src:ro
+    networks:
+      - grants_network
+    stdin_open: true     # Permite input (para confirmação de dados)
+    tty: true            # Permite interatividade
+    restart: on-failure
+
+# ===== VOLUMES NOMEADOS =====
+# Persistem dados mesmo se containers forem deletados
+volumes:
+  sqlserver_data:
+    driver: local
+  sqlserver_logs:
+    driver: local
+  sqlserver_backup:
+    driver: local
+
+# ===== REDE =====
+# Permite comunicação entre containers
+networks:
+  grants_network:
+    driver: bridge
+
+# ===== INSTRUÇÕES DE USO =====
+# 1. Build das imagens:
+#    docker-compose build
+#
+# 2. Iniciar (SQL Server + ETL):
+#    docker-compose up
+#
+# 3. Apenas SQL Server (desenvolvimento):
+#    docker-compose up sqlserver
+#
+# 4. Executar ETL depois que SQL Server estiver pronto:
+#    docker-compose up etl_pipeline
+#
+# 5. View logs:
+#    docker-compose logs -f etl_pipeline
+#    docker-compose logs -f sqlserver
+#
+# 6. Parar:
+#    docker-compose down
+#
+# 7. Deletar volumes (CUIDADO - deleta dados!):
+#    docker-compose down -v

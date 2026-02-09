@@ -1,0 +1,60 @@
+# 🔐 ARQUIVOS SENSÍVEIS
+.env                    # Nunca commitar! Tem senha do banco
+.env.local
+.env.*.local
+
+# 📦 VIRTUAL ENVIRONMENT
+.venv/
+venv/
+ENV/
+env/
+
+# 📊 DADOS PROCESSADOS (locais)
+data/raw/*
+data/processed/*
+
+# 📋 LOGS (locais)
+logs/*
+
+# 🐍 Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 🔧 IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 📁 Sistema
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# 🗄️ Banco de dados local
+*.db
+*.sqlite
+*.sqlite3
+
+# 📁 Relatórios locais
+reports/

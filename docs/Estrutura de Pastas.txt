@@ -1,0 +1,320 @@
+================================================================================
+🏗️  ESTRUTURA COMPLETA DO PROJETO - GRANTS MANAGEMENT ETL PIPELINE
+================================================================================
+Última atualização: Fevereiro 2026
+Status: 100% FUNCIONAL E DOCUMENTADO ✅
+
+================================================================================
+📁 RAIZ DO PROJETO
+================================================================================
+
+Grants Management ETL Pipeline/
+│
+├── 🔐 .env                              CONFIGURAÇÃO SENSÍVEL (seu arquivo pessoal)
+│   │   # NUNCA commitar no Git! (adicione ao .gitignore)
+│   │   # Contém: DIR_DOWNLOADS, DIR_STAGING, CONN_STR_SQLSERVER
+│   │   # Criado a partir do .env.template
+│   │
+│   └── Exemplo:
+│       DIR_DOWNLOADS=C:\Users\usuario\Downloads
+│       DIR_STAGING=C:\Users\usuario\Documents\...\data\processed
+│       CONN_STR_SQLSERVER=Driver={ODBC Driver 17...}
+│
+├── 📝 .env.template                     TEMPLATE DO .env (SEGURO PARA GIT)
+│   │   # Cópia do .env sem dados sensíveis
+│   │   # Use como referência para criar seu .env
+│   │   # Contém comentários explicativos
+│   │
+│   └── INSTRUÇÕES: copy .env.template .env (no Windows)
+│
+├── 📦 requirements.txt                  DEPENDÊNCIAS PYTHON
+│   │   # pip install -r requirements.txt
+│   │   # Contém todas as bibliotecas necessárias
+│   │
+│   └── EXECUTE ANTES: pip install -r requirements.txt
+│
+├── 🐳 Dockerfile                        IMAGEM DOCKER (Linux + Python + ODBC)
+│   │   # Não execute manualmente - use docker-compose
+│   │
+│   └── USAR: docker-compose build
+│
+├── 🐋 docker-compose.yaml               ORQUESTRAÇÃO DOCKER
+│   │   # Services: sqlserver (SQL Server 2022) + etl_pipeline (Python)
+│   │
+│   └── USAR: docker-compose up
+│
+├── 📚 GUIA_COMPLETO.md                  DOCUMENTAÇÃO PROFISSIONAL 📚
+│   │   # LEIA ISTO PRIMEIRO!
+│   │   # Explicação completa de cada etapa
+│   │   # Diagramas, exemplos, troubleshooting
+│   │
+│   └── ESSENCIAL: Ler antes de usar o pipeline
+│
+└── docs/Estrutura de Pastas.txt          ESTE ARQUIVO
+
+
+================================================================================
+📁 DATA/ - DADOS (RAW → PROCESSED)
+================================================================================
+
+data/
+│
+├── raw/                                 📥 ENTRADA (DADOS BRUTOS)
+│   │   # Arquivos que você coloca aqui (ou main.py copia de Downloads)
+│   │   # Extensões aceitas: .xlsx, .xls, .csv
+│   │
+│   ├── Despesas_SIT_57884.xlsx          ← Um arquivo para cada SIT
+│   ├── Despesas_SIT_63377.xlsx
+│   ├── resumo_financeiro.csv            ← Arquivo consolidado
+│   └── (mais arquivos conforme necessário)
+│
+│   FLUXO: Downloads/ → main.py → raw/ → Extract
+│
+└── processed/                           🏭 PROCESSAMENTO/SAÍDA
+    │   # Criado automaticamente pelo pipeline
+    │
+    ├── despesas_geral.csv               ← ETAPA 1: Consolidação
+    │   │   # Todos os XLSXs consolidados
+    │   │
+    │   ├── despesas_upload.csv           ← ETAPA 2: Para carregar
+    │   │   │   # Com coluna 'acao' (INSERT|UPDATE)
+    │   │   │
+    │   │   └── despesas_upload.processado.csv  ← ETAPA 3: Histórico
+    │   │
+    │   ├── resumo_termos.csv            ← ETAPA 1: Termos extraídos
+    │   │   │   # Colunas: nro_sit | rendimento_financeiro_total
+    │   │   │
+    │   │   └── update_termos.csv        ← ETAPA 2: Divergências (OPCIONAL)
+    │   │
+    │   ├── resumo_rubricas.csv          ← ETAPA 1: Rubricas extraídas
+    │   │   │   # Colunas: nro_sit | rubrica | valor_estornado | id_termo_rubrica
+    │   │   │
+    │   │   └── update_rubricas.csv      ← ETAPA 2: Divergências (OPCIONAL)
+    │   │
+    │   └── (arquivos temporários)
+
+
+================================================================================
+📁 DATABASE/ - SCRIPTS SQL
+================================================================================
+
+database/
+│
+├── ddl/                                 🏗️ DDL (CRIAÇÃO DE TABELAS)
+│   │   # Scripts de CRIAÇÃO (Schema)
+│   │   # Executar uma única vez no início
+│   │
+│   ├── estrutura_dbo_despesas.sql       ← Tabela principal: despesas
+│   ├── estrutura_dbo_favorecidos.sql    ← Tabela: favorecidos
+│   ├── estrutura_dbo_rubricas.sql       ← Tabela: rubricas
+│   ├── estrutura_dbo_termos.sql         ← Tabela: termos
+│   └── estrutura_dbo_vagas_termos.sql   ← Tabela: vagas_termos
+│
+├── dml/                                 📝 DML (LÓGICA/REGRAS)
+│   │   # Scripts de ATUALIZAÇÃO/LÓGICA
+│   │
+│   └── update_rules.sql                 ← Regras de atualização
+│
+└── scripts_auxiliares/                  🔧 SCRIPTS AD-HOC
+    │   # Scripts de manutenção, debugging, testes
+    │
+    ├── 13-funcionarios.sql
+    ├── 13-termos.sql
+    ├── atualizacao_favorecidos.sql
+    ├── atualizacao_vagas_termos.sql
+    ├── EXCLUI e ATUALIZA.sql            ← CUIDADO: Limpeza
+    ├── RH.sql
+    └── SQLQuery1.sql
+
+
+================================================================================
+📁 DOCS/ - DOCUMENTAÇÃO
+================================================================================
+
+docs/
+├── Estrutura de Pastas.txt              ← ESTE ARQUIVO
+└── (README.md se houver)
+
+
+================================================================================
+📁 LOGS/ - HISTÓRICO DE EXECUÇÃO
+================================================================================
+
+logs/
+│
+├── MainPipeline_20260209_143022.log     ← Log principal completo
+├── ExpensesExtractor_20260209_143022.log ← Log Etapa 1 (detalhado)
+├── ExpensesTransformer_20260209_143025.log ← Log Etapa 2 (detalhado)
+└── ExpensesLoader_20260209_143030.log   ← Log Etapa 3 (detalhado)
+
+# Novos arquivos criados A CADA execução
+# Formatação: {ModuleName}_{YYYYMMDD}_{HHMMSS}.log
+
+
+================================================================================
+📁 REPORTS/ - DASHBOARDS
+================================================================================
+
+reports/
+│
+├── Controle de RH Por Convênio.pbix     📊 Dashboard Power BI (RH)
+└── Grants_Dashboard.pbix                📊 Dashboard Principal (Visão geral)
+
+# Conectam diretamente ao SQL Server
+# Atualização: manual (F9 no Power BI)
+
+
+================================================================================
+📁 SRC/ - CÓDIGO-FONTE PYTHON 🧠
+================================================================================
+
+src/
+│
+├── ⭐ main.py                           ORQUESTRADOR PRINCIPAL
+│   │   # EXECUTE: python -m src.main
+│   │
+│   │   FLUXO:
+│   │   1. Valida .env
+│   │   2. Sincroniza Downloads → data/raw (automático!)
+│   │   3. Extração (Etapa 1)
+│   │   4. Transformação (Etapa 2)
+│   │   5. ⏸️ PAUSA: confirmação (você digita SIM)
+│   │   6. Carga (Etapa 3) - SOMENTE SE CONFIRMOU
+│   │   7. FIM: resumo e logs
+│   │
+│   └── FUNÇÃO NOVA: validar_e_confirmar() ← mostra dados antes de atualizar
+│
+├── 📁 extract/                          📥 ETAPA 1: EXTRAÇÃO
+│   │   # Lê XLSX/CSV brutos → consolida em CSVs padronizados
+│   │
+│   ├── expenses.py                      ✅ NOVO: Wrapper (USE ISTO!)
+│   │   │   # Classe: ExpensesExtractor
+│   │   │   # Método: run()
+│   │   │   # Entrada: data/raw/*.xlsx + .csv
+│   │   │   # Saída: despesas_geral.csv + resumos
+│   │   │
+│   │   ├── 1_extract_csv.py             (Script original - referência)
+│   │   └── 1_extract_resumo.py          (Script original - referência)
+│
+├── 📁 transform/                        🔄 ETAPA 2: TRANSFORMAÇÃO
+│   │   # Compara com banco + valida divergências
+│   │
+│   ├── transformer.py                   ✅ NOVO: Wrapper (USE ISTO!)
+│   │   │   # Classe: ExpensesTransformer
+│   │   │   # Método: run()
+│   │   │   # Entrada: despesas_geral.csv + SQL Server
+│   │   │   # Saída: despesas_upload.csv + updates opcionais
+│   │   │
+│   │   ├── 2_transform_compare.py       (Script original - referência)
+│   │   └── 2_validate.py                (Script original - referência)
+│
+├── 📁 load/                             📤 ETAPA 3: CARGA
+│   │   # Escreve no SQL Server (INSERT/UPDATE)
+│   │
+│   ├── loader.py                        ✅ NOVO: Wrapper (USE ISTO!)
+│   │   │   # Classe: ExpensesLoader
+│   │   │   # Método: run()
+│   │   │   # Entrada: despesas_upload.csv + updates
+│   │   │   # Saída: Banco atualizado
+│   │   │
+│   │   ├── 3_load_sql.py                (Script original - referência)
+│   │   └── 3_update_sql.py              (Script original - referência)
+│
+└── 📁 utils/                            🔧 MÓDULOS COMPARTILHADOS
+    │   # Importados por todos
+    │
+    ├── logger.py                        ✅ NOVO: Logging centralizado
+    │   │   # Função: setup_logger(name, log_dir)
+    │   │   # Cria logs em: logs/{name}_{timestamp}.log
+    │   │
+    ├── config.py                        ✅ NOVO: Configurações
+    │   │   # Classe: Config
+    │   │   # Carrega .env
+    │   │   # Contém: DIR_*, CONN_STR, SIT_TERMO_MAP, MAPEAMENTO_DESPESAS
+    │   │   # Método: validate() ← verifica .env
+    │   │
+    ├── database.py                      ✅ NOVO: Gerenciador de BD
+    │   │   # Classe: DatabaseManager
+    │   │   # Métodos: get_connection(), execute_query(), execute_insert_update()
+    │   │
+    ├── ingestor.py                      ✅ NOVO: Funções sanitizadoras
+    │   │   # Funções: classificar_tipo_despesa(), limpar_cpf_cnpj(), etc
+    │   │   # FUNÇÃO PRINCIPAL: copiar_downloads_para_raw()
+    │   │   #   └─ Move arquivos de Downloads → raw (automático!)
+    │   │
+    ├── README.md                        📚 Documentação do src/
+    │
+    └── __pycache__/                     🚫 IGNORAR (cache Python)
+
+
+================================================================================
+📁 TESTS/ - TESTES
+================================================================================
+
+tests/
+└── 1.0_extract_csv.py                   🧪 Script de teste (opcional)
+
+
+================================================================================
+🎯 RESUMO EXECUTIVO
+================================================================================
+
+ARQUITETURA:
+
+    Downloads/ → main.py (copia) → data/raw/
+         ↓
+    Etapa 1: EXTRAÇÃO (expenses.py)
+         ↓
+    Etapa 2: TRANSFORMAÇÃO (transformer.py)
+         ↓
+    ⏸️ PAUSA: Confirmação (validar_e_confirmar)
+         ↓
+    Etapa 3: CARGA (loader.py)
+         ↓
+    ✅ Banco de Dados Atualizado!
+
+
+COMO USAR:
+
+    1. pip install -r requirements.txt
+    2. copy .env.template .env
+    3. Editar .env com seus dados
+    4. Colocar arquivos em Downloads/
+    5. python -m src.main
+    6. Digitar: SIM (para confirmar)
+    7. Ver logs em logs/
+
+
+ARQUIVOS IMPORTANTES:
+
+    .env                ← Configure isso PRIMEIRO
+    src/main.py         ← Execute isso!
+    GUIA_COMPLETO.md    ← Leia para entender tudo
+    Dockerfile          ← Para Docker (opcional)
+
+
+================================================================================
+✅ CHECKLIST ANTES DE RODAR
+================================================================================
+
+□ Python 3.8+ instalado
+□ requirements.txt instalado
+□ .env criado e configurado
+□ SQL Server rodando
+□ ODBC Driver 17 instalado (Windows)
+□ Arquivos em Downloads/ ou data/raw/
+□ Database/ddl scripts executados (setup inicial)
+
+
+================================================================================
+📞 DÚVIDAS?
+================================================================================
+
+→ GUIA_COMPLETO.md       (documentação completa e didática)
+→ logs/*.log             (arquivos de execução)
+→ src/README.md          (como usar o código)
+
+
+================================================================================
+FIM - Fevereiro 2026 ✅
+================================================================================
